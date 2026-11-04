@@ -1,6 +1,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include"Model.h"
 #include <filesystem>
+#include <algorithm>
+#include <limits>
 
 namespace fs = std::filesystem;
 
@@ -18,8 +20,78 @@ Model::Model(const char* file)
 	traverseNode(0);
 }
 
+glm::vec2 Model::GetVerticalBounds(glm::vec3 scale) const
+{
+	float minimumY = std::numeric_limits<float>::max();
+	float maximumY = std::numeric_limits<float>::lowest();
+	for (std::size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+	{
+		glm::mat4 transform = glm::scale(glm::mat4(1.0f), scale) * matricesMeshes[meshIndex];
+		for (const Vertex& vertex : meshes[meshIndex].vertices)
+		{
+			float vertexY = (transform * glm::vec4(vertex.position, 1.0f)).y;
+			minimumY = std::min(minimumY, vertexY);
+			maximumY = std::max(maximumY, vertexY);
+		}
+	}
+	if (minimumY == std::numeric_limits<float>::max())
+		return glm::vec2(0.0f);
+	return glm::vec2(minimumY, maximumY);
+}
+
+glm::vec3 Model::GetMinimumBounds(glm::vec3 scale) const
+{
+	glm::vec3 minimum(std::numeric_limits<float>::max());
+	for (std::size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+	{
+		glm::mat4 transform = glm::scale(glm::mat4(1.0f), scale) * matricesMeshes[meshIndex];
+		for (const Vertex& vertex : meshes[meshIndex].vertices)
+			minimum = glm::min(minimum, glm::vec3(transform * glm::vec4(vertex.position, 1.0f)));
+	}
+	return minimum;
+}
+
+glm::vec3 Model::GetMaximumBounds(glm::vec3 scale) const
+{
+	glm::vec3 maximum(std::numeric_limits<float>::lowest());
+	for (std::size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+	{
+		glm::mat4 transform = glm::scale(glm::mat4(1.0f), scale) * matricesMeshes[meshIndex];
+		for (const Vertex& vertex : meshes[meshIndex].vertices)
+			maximum = glm::max(maximum, glm::vec3(transform * glm::vec4(vertex.position, 1.0f)));
+	}
+	return maximum;
+}
+
+std::vector<std::array<glm::vec3, 3>> Model::GetTriangles(glm::vec3 translation, glm::vec3 scale) const
+{
+	std::vector<std::array<glm::vec3, 3>> triangles;
+	for (std::size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+	{
+		const Mesh& mesh = meshes[meshIndex];
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation) *
+			glm::scale(glm::mat4(1.0f), scale) * matricesMeshes[meshIndex];
+		for (std::size_t index = 0; index + 2 < mesh.indices.size(); index += 3)
+		{
+			std::array<glm::vec3, 3> triangle;
+			for (int corner = 0; corner < 3; ++corner)
+			{
+				GLuint vertexIndex = mesh.indices[index + corner];
+				if (vertexIndex >= mesh.vertices.size())
+					continue;
+				triangle[corner] = glm::vec3(transform * glm::vec4(mesh.vertices[vertexIndex].position, 1.0f));
+			}
+			triangles.push_back(triangle);
+		}
+	}
+	return triangles;
+}
+
 void Model::Draw(Shader& shader, Camera& camera, glm::vec3 translation)
 {
+	shader.Activate();
+	glUniform1i(glGetUniformLocation(shader.ID, "useSolidBaseColor"), 0);
+	glUniform3f(glGetUniformLocation(shader.ID, "objectTint"), 1.0f, 1.0f, 1.0f);
 	for (unsigned int i = 0; i < meshes.size(); i++)
 	{
 
@@ -33,13 +105,58 @@ void Model::Draw(Shader& shader, Camera& camera, glm::vec3 translation)
 	}
 }
 
+void Model::DrawWithTint(Shader& shader, Camera& camera, glm::vec3 translation, glm::vec3 tint, glm::vec3 scale, glm::mat4 rotation)
+{
+	shader.Activate();
+	glUniform1i(glGetUniformLocation(shader.ID, "useSolidBaseColor"), 0);
+	glUniform3f(glGetUniformLocation(shader.ID, "objectTint"), tint.r, tint.g, tint.b);
+	for (std::size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+	{
+		glm::mat4 worldMatrix = glm::translate(glm::mat4(1.0f), translation) * rotation *
+			glm::scale(glm::mat4(1.0f), scale) * matricesMeshes[meshIndex];
+		meshes[meshIndex].Mesh::Draw(shader, camera, worldMatrix);
+	}
+	glUniform3f(glGetUniformLocation(shader.ID, "objectTint"), 1.0f, 1.0f, 1.0f);
+}
+
+void Model::Draw(Shader& shader, Camera& camera, glm::vec3 translation, glm::vec3 scale)
+{
+	shader.Activate();
+	glUniform1i(glGetUniformLocation(shader.ID, "useSolidBaseColor"), 0);
+	glUniform3f(glGetUniformLocation(shader.ID, "objectTint"), 0.2f, 1.0f, 0.2f);
+	for (unsigned int i = 0; i < meshes.size(); i++)
+	{
+		glm::mat4 worldMatrix = glm::translate(glm::mat4(1.0f), translation) *
+			glm::scale(glm::mat4(1.0f), scale) * matricesMeshes[i];
+		meshes[i].Mesh::Draw(shader, camera, worldMatrix);
+	}
+}
+
 void Model::Draw(Shader& shader, Camera& camera)
 {
+	shader.Activate();
+	glUniform1i(glGetUniformLocation(shader.ID, "useSolidBaseColor"), 0);
+	glUniform3f(glGetUniformLocation(shader.ID, "objectTint"), 1.0f, 1.0f, 1.0f);
 
 	for (unsigned int i = 0; i < meshes.size(); i++)
 	{
 		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[i]);
 	}
+}
+
+void Model::DrawWithBaseColor(Shader& shader, Camera& camera, glm::vec3 translation, glm::vec3 baseColor, glm::vec3 scale)
+{
+	shader.Activate();
+	glUniform1i(glGetUniformLocation(shader.ID, "useSolidBaseColor"), 1);
+	glUniform3f(glGetUniformLocation(shader.ID, "solidBaseColor"), baseColor.r, baseColor.g, baseColor.b);
+	glUniform3f(glGetUniformLocation(shader.ID, "objectTint"), 1.0f, 1.0f, 1.0f);
+	for (std::size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+	{
+		glm::mat4 worldMatrix = glm::translate(glm::mat4(1.0f), translation) *
+			glm::scale(glm::mat4(1.0f), scale) * matricesMeshes[meshIndex];
+		meshes[meshIndex].Mesh::Draw(shader, camera, worldMatrix);
+	}
+	glUniform1i(glGetUniformLocation(shader.ID, "useSolidBaseColor"), 0);
 }
 
 void Model::loadMesh(unsigned int indMesh)
@@ -276,16 +393,25 @@ std::vector<Texture> Model::getTextures()
 		{
 			if (texPath.find("baseColor") != std::string::npos)
 			{
-				Texture diffuse = Texture(texturePath.string().c_str(), "diffuse", loadedTex.size());
+				Texture diffuse = Texture(texturePath.string().c_str(), "diffuse", static_cast<GLuint>(loadedTex.size()));
 				textures.push_back(diffuse);
 				loadedTex.push_back(diffuse);
 				loadedTexName.push_back(texPath);
 			}
 			else if (texPath.find("metallicRoughness") != std::string::npos)
 			{
-				Texture specular = Texture(texturePath.string().c_str(), "specular", loadedTex.size());
+				Texture specular = Texture(texturePath.string().c_str(), "specular", static_cast<GLuint>(loadedTex.size()));
 				textures.push_back(specular);
 				loadedTex.push_back(specular);
+				loadedTexName.push_back(texPath);
+			}
+			else
+			{
+				// glTF base-color images are not required to use a "baseColor" filename.
+				// Treat otherwise-unclassified images as diffuse so assets such as redorb.png render.
+				Texture diffuse = Texture(texturePath.string().c_str(), "diffuse", static_cast<GLuint>(loadedTex.size()));
+				textures.push_back(diffuse);
+				loadedTex.push_back(diffuse);
 				loadedTexName.push_back(texPath);
 			}
 		}

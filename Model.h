@@ -2,6 +2,7 @@
 #define MODEL_CLASS_H
 
 #include<json/json.h>
+#include<array>
 #include"Mesh.h"
 
 using json = nlohmann::json;
@@ -14,6 +15,13 @@ public:
 
 	void Draw(Shader& shader, Camera& camera);
 	void Draw(Shader& shader, Camera& camera, glm::vec3 translation);
+	void DrawWithTint(Shader& shader, Camera& camera, glm::vec3 translation, glm::vec3 tint, glm::vec3 scale = glm::vec3(1.0f), glm::mat4 rotation = glm::mat4(1.0f));
+	void Draw(Shader& shader, Camera& camera, glm::vec3 translation, glm::vec3 scale);
+	void DrawWithBaseColor(Shader& shader, Camera& camera, glm::vec3 translation, glm::vec3 baseColor, glm::vec3 scale = glm::vec3(1.0f));
+	glm::vec2 GetVerticalBounds(glm::vec3 scale = glm::vec3(1.0f)) const;
+	glm::vec3 GetMinimumBounds(glm::vec3 scale = glm::vec3(1.0f)) const;
+	glm::vec3 GetMaximumBounds(glm::vec3 scale = glm::vec3(1.0f)) const;
+	std::vector<std::array<glm::vec3, 3>> GetTriangles(glm::vec3 translation = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) const;
 
 private:
 	const char* file;

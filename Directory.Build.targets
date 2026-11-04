@@ -1,0 +1,9 @@
+<Project>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	<ClCompile>
+	  <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+	  <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+	  <PreprocessorDefinitions>_CONSOLE;_UNICODE;UNICODE</PreprocessorDefinitions>
+	</ClCompile>
+  </ItemDefinitionGroup>
+</Project>

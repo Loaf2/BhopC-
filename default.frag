@@ -14,6 +14,11 @@ uniform sampler2D specular0;
 uniform vec4 lightColor;
 uniform vec3 lightPos;
 uniform vec3 camPos;
+uniform vec3 objectTint;
+uniform int useSolidBaseColor;
+uniform vec3 solidBaseColor;
+uniform vec3 sunDirection;
+uniform vec3 ambientColor;
 
 
 vec4 pointLight()
@@ -48,11 +53,8 @@ vec4 pointLight()
 vec4 direcLight()
 {
 
-	float ambient = 0.20f;
-
-
 	vec3 normal = normalize(Normal);
-	vec3 lightDirection = normalize(vec3(1.0f, 1.0f, 0.0f));
+	vec3 lightDirection = normalize(sunDirection);
 	float diffuse = max(dot(normal, lightDirection), 0.0f);
 
 
@@ -62,7 +64,8 @@ vec4 direcLight()
 	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
 	float specular = specAmount * specularLight;
 
-	return (texture(diffuse0, texCoord) * (diffuse + ambient) + texture(specular0, texCoord).r * specular) * lightColor;
+	vec3 dayNightLighting = ambientColor + diffuse * max(lightColor.rgb, vec3(0.0));
+	return vec4(texture(diffuse0, texCoord).rgb * dayNightLighting + texture(specular0, texCoord).r * specular * max(lightColor.rgb, vec3(0.0)), lightColor.a);
 }
 
 vec4 spotLight()
@@ -96,6 +99,9 @@ vec4 spotLight()
 
 void main()
 {
-
-	FragColor = direcLight();
+	vec4 litColor = direcLight();
+	float solidDiffuse = max(dot(normalize(Normal), normalize(sunDirection)), 0.0);
+	vec3 solidLighting = ambientColor + solidDiffuse * max(lightColor.rgb, vec3(0.0));
+	vec3 baseColor = useSolidBaseColor != 0 ? solidBaseColor * solidLighting : litColor.rgb;
+	FragColor = vec4(baseColor * objectTint, litColor.a);
 }

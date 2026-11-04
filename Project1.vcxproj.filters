@@ -82,5 +82,7 @@
     <None Include="default.vert">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="Directory.Build.props" />
+    <None Include="Directory.Build.targets" />
   </ItemGroup>
 </Project>

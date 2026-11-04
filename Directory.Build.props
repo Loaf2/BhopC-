@@ -1,0 +1,17 @@
+<Project>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+	<ClCompile>
+	  <AdditionalIncludeDirectories>D:\CppProjects\OpenGL\Project1\Project1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+	</ClCompile>
+	<Link>
+	  <AdditionalLibraryDirectories>D:\CppProjects\OpenGL\Project1\Project1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+	  <AdditionalDependencies>glfw3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+	</Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	<ClCompile>
+	  <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+	  <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+	</ClCompile>
+  </ItemDefinitionGroup>
+</Project>

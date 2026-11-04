@@ -30,22 +30,11 @@ void Camera::Inputs(GLFWwindow* window, bool allowMovement)
 {
 	if (allowMovement)
 	{
-		glm::vec3 forward = glm::normalize(glm::vec3(Orientation.x, 0.0f, Orientation.z));
-		glm::vec3 right = glm::normalize(glm::cross(forward, Up));
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			Position += speed * forward;
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			Position += speed * -right;
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			Position += speed * -forward;
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			Position += speed * right;
 		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-			speed = 0.4f;
+			speed = 42.0f;
 		else
-			speed = 0.1f;
+			speed = 12.0f;
 	}
-
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -75,4 +64,5 @@ void Camera::Inputs(GLFWwindow* window, bool allowMovement)
 	direction.y = sin(glm::radians(pitch));
 	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	Orientation = glm::normalize(direction);
+
 }
